@@ -5,6 +5,7 @@ from donor_name_parser import DonorNameParser
 
 def filter_df_paypal(df):
     df = df.loc[df["Brutto"] > 0]
+    df = df.loc[(df["Typ"] == 'Spendenzahlung') | (df["Typ"] == 'Abonnementzahlung')]
     return df
 
 

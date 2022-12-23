@@ -43,6 +43,7 @@ def process_paypal():
                                  parse_dates=['Datum'], date_parser=date_parser)
     transaction_df['Brutto'] = transaction_df['Brutto'].apply(locale.atof)
     transaction_df = transaction_entities.filter_df_paypal(transaction_df)
+    transaction_df.fillna('', inplace=True)
 
     # Split CSV
     counter = 0
