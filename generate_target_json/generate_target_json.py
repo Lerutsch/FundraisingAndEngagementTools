@@ -23,9 +23,13 @@ locale.setlocale(locale.LC_ALL, 'de_DE')
 
 
 def create_json_file(folder, json):
-    file = open(folder+"\\"+str(uuid.uuid4()), "w")
+    file = open(folder+"\\"+str(uuid.uuid4())+".json", "w")
     file.write(json)
     file.close()
+
+
+def date_parser(str_date):
+    return datetime.strptime(str_date, "%d.%m.%Y")
 
 
 def process_paypal():
@@ -37,8 +41,8 @@ def process_paypal():
     # transaction_df = pd.read_csv(paypal_file_location, decimal=',', thousands='.')
     # custom_date_parser = lambda x: datetime.strptime(x, "%d.%m.%Y")
     # transaction_df = pd.read_csv(paypal_file_location, parse_dates=['Datum'], date_parser=custom_date_parser)
-    transaction_df = pd.read_csv(paypal_file_location, dtype={'Telefon': 'str'})
-    # transaction_df['Datum'] = transaction_df['Datum'].astype({'Datum': 'datetime64[ns]'})
+    transaction_df = pd.read_csv(paypal_file_location, dtype={'Telefon': 'str'},
+                                 parse_dates=['Datum'], date_parser=date_parser)
     transaction_df['Brutto'] = transaction_df['Brutto'].apply(locale.atof)
     # transaction_df['Telefon'] = transaction_df['Telefon'].astype('str')
     # transaction_df['Brutto'] = transaction_df['Brutto'].apply(lambda x: x.replace('.', ''))
@@ -46,7 +50,7 @@ def process_paypal():
     # transaction_df['Brutto'] = transaction_df['Brutto'].astype('float64')
     transaction_df = transaction_entities.filter_df_paypal(transaction_df)
 
-    print(transaction_df.info())
+    # print(transaction_df['Datum'])
     # Split CSV
     for index, row in transaction_df.iterrows():
         paypal_transaction = transaction_entities.PaypalData(row)
@@ -54,7 +58,6 @@ def process_paypal():
         create_json_file(paypal_write_folder, transaction_json)
         break
 
-    # For every record create JSON
         # Log result of file creation
 
     # Move CSV to Imported folder
