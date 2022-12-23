@@ -1,31 +1,26 @@
 import locale
+import time
 import uuid
 from datetime import datetime
 
 import transaction_entities
 import pandas as pd
 
-locale.setlocale(locale.LC_ALL, 'de_DE')
+import logging
 
-# TD = transaction_entities.TransactionData()
-# TD.salutation = 'salut'
-# TD.date = '15.07.2022'
-# TD.last_name = 'Lastbutnotleast'
-#
-# TDP = transaction_entities.PaypalData()
-# TDP.salutation = 'salut_payp'
-# TDP.date = '13.07.2022'
-# TDP.last_name = 'Payp'
-#
-# print(TD.toJSON())
-# print(TDP.toJSON())
-# print(TDP.gift_type)
+import os
+import shutil
+
+
+timestamp_str = time.strftime("%Y%m%d-%H%M%S")
 
 
 def create_json_file(folder, json):
-    file = open(folder+"\\"+str(uuid.uuid4())+".json", "w")
+    guid = str(uuid.uuid4())
+    file = open(folder+"\\"+guid+".json", "w")
     file.write(json)
     file.close()
+    return guid
 
 
 def date_parser(str_date):
@@ -33,34 +28,48 @@ def date_parser(str_date):
 
 
 def process_paypal():
-    paypal_file_location = r"C:\Users\OleksiiMakarenko\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK Finance " \
-                           r"- Documents\Integration\Paypal\Download.csv"
+    paypal_file_name = '20221223_paypal_export.csv'
+    paypal_file_folder = r"C:\Users\OleksiiMakarenko\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK Finance " \
+                           r"- Documents\Integration\Paypal"
+    paypal_file_location = paypal_file_folder + '\\' + paypal_file_name
+    paypal_processed_folder = r"C:\Users\OleksiiMakarenko\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK " \
+                                r"Finance - Documents\Integration\Paypal\Processed"
+    paypal_processed_location = paypal_processed_folder + '\\' + paypal_file_name
     paypal_write_folder = r"C:\Users\OleksiiMakarenko\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK Finance " \
                           r"- Documents\Integration\Paypal\JSON_Import"
+
     # Read CSV
-    # transaction_df = pd.read_csv(paypal_file_location, decimal=',', thousands='.')
-    # custom_date_parser = lambda x: datetime.strptime(x, "%d.%m.%Y")
-    # transaction_df = pd.read_csv(paypal_file_location, parse_dates=['Datum'], date_parser=custom_date_parser)
     transaction_df = pd.read_csv(paypal_file_location, dtype={'Telefon': 'str'},
                                  parse_dates=['Datum'], date_parser=date_parser)
     transaction_df['Brutto'] = transaction_df['Brutto'].apply(locale.atof)
-    # transaction_df['Telefon'] = transaction_df['Telefon'].astype('str')
-    # transaction_df['Brutto'] = transaction_df['Brutto'].apply(lambda x: x.replace('.', ''))
-    # transaction_df['Brutto'] = transaction_df['Brutto'].apply(lambda x: x.replace(',', '.'))
-    # transaction_df['Brutto'] = transaction_df['Brutto'].astype('float64')
     transaction_df = transaction_entities.filter_df_paypal(transaction_df)
 
-    # print(transaction_df['Datum'])
     # Split CSV
+    counter = 0
     for index, row in transaction_df.iterrows():
         paypal_transaction = transaction_entities.PaypalData(row)
         transaction_json = paypal_transaction.toJSON()
-        create_json_file(paypal_write_folder, transaction_json)
-        break
-
-        # Log result of file creation
+        file_name = create_json_file(paypal_write_folder, transaction_json)
+        logging.info(f"File {file_name} was created for {paypal_transaction.source_name}, "
+                     f"email {paypal_transaction.email}")
+        counter += 1
+        if counter == 3:
+            break
 
     # Move CSV to Imported folder
+    shutil.move(paypal_file_location, paypal_processed_location)
 
+
+locale.setlocale(locale.LC_ALL, 'de_DE')
+logging_folder = r"C:\Users\OleksiiMakarenko\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK Finance " \
+               r"- Documents\Integration\Paypal\JSON_Import\Logs"
+logging.basicConfig(filename=logging_folder+'\\' + timestamp_str + '_Transaction_process',
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                    datefmt='%H:%M:%S',
+                    level=logging.DEBUG)
+
+logging.info("Running Generating JSON files for Transactions")
 
 process_paypal()
+logger = logging.getLogger('urbanGUI')
