@@ -1,8 +1,4 @@
-import math
-
 import nameparser
-import numpy as np
-import pandas as pd
 import requests
 
 
@@ -20,13 +16,15 @@ def get_salutation(fullname):
 
         salutation = ""
         if gender == "female":
-            salutation = "Frau"
+            salutation = 844060000
         elif gender == "male":
-            salutation = "Herr"
+            salutation = 844060001
 
         # print(gender + ' ' + fullname)
 
         return salutation
+    else:
+        return 844060004
 
 
 class DonorNameParser:
@@ -40,13 +38,4 @@ class DonorNameParser:
         self.title = str.title(parsed_name.title)
 
         self.salutation = get_salutation(full_name)
-
-    def get_first_name(self):
-        return
-
-    def get_last_name(self):
-        return
-
-    def get_salutation_name(self):
-        return
 

@@ -9,6 +9,12 @@ def filter_df_paypal(df):
     return df
 
 
+def filter_df_bank(df):
+    df = df.loc[df["Betrag"] > 0]
+    df = df.loc[(df["Buchungstext"] != 'RUECKUEBERWEISUNG')]
+    return df
+
+
 def format_field(value):
     if isinstance(value, datetime.date):
         return value.isoformat()
@@ -47,9 +53,22 @@ class PaypalData(TransactionData):
 
 
 class BankData(TransactionData):
-    gift_type = 'Paypal'
-    data_dict = {'name': '', 'email': ''}
-    key = 'email'
+    def __init__(self, df_row):
+        self.gift_type = 'Wire or Transfer'
+        self.source_name = df_row['Beguenstigter/Zahlungspflichtiger']
+        self.total_paid = df_row['Betrag']
+        self.date = df_row['Buchungstag'].date()
+        self.purpose = df_row['Verwendungszweck']
+        self.cheque_number = df_row['Kontonummer/IBAN']
+
+        self.key = 'Kontonummer/IBAN'
+
+        donor_name_parser = DonorNameParser(self.source_name)
+        self.first_name = donor_name_parser.first_name
+        self.last_name = donor_name_parser.last_name
+        self.salutation = donor_name_parser.salutation
+        self.middle_name = donor_name_parser.middle_name
+        self.title = donor_name_parser.title
 
 
 class StripeData(TransactionData):
