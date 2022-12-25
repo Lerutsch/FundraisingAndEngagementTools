@@ -51,6 +51,17 @@ class PaypalData(TransactionData):
         self.middle_name = donor_name_parser.middle_name
         self.title = donor_name_parser.title
 
+        #WPForm
+        self.payment_method = ""
+        self.address = ""
+        self.newsletter = 0
+
+    def initWPForm(self, wpform_row):
+        self.newsletter = wpform_row['Subscribe to Newsletter']
+        self.address = wpform_row['Adresse']
+        self.salutation = wpform_row['Anrede']
+        self.payment_method = wpform_row['Zahlungsmethode']
+
 
 class BankData(TransactionData):
     def __init__(self, df_row):
@@ -72,9 +83,35 @@ class BankData(TransactionData):
 
 
 class StripeData(TransactionData):
-    gift_type = 'Stripe'
-    data_dict = {'name': '', 'email': ''}
-    key = 'email'
+    def __init__(self, df_row):
+        self.gift_type = 'Stripe'
+        self.source_name = df_row['Name']
+        self.total_paid = df_row['Amount']
+        self.date = df_row['Created (UTC)'].date()
+        # self.purpose = df_row['Verwendungszweck']
+        # self.cheque_number = df_row['Kontonummer/IBAN']
+        self.email = df_row['Email']
+        self.transaction_id = df_row['id']
+
+        self.key = 'email'
+
+        donor_name_parser = DonorNameParser(self.source_name)
+        self.first_name = donor_name_parser.first_name
+        self.last_name = donor_name_parser.last_name
+        self.salutation = donor_name_parser.salutation
+        self.middle_name = donor_name_parser.middle_name
+        self.title = donor_name_parser.title
+
+        #WPForm
+        self.payment_method = ""
+        self.address = ""
+        self.newsletter = 0
+
+    def initWPForm(self, wpform_row):
+        self.newsletter = wpform_row['Subscribe to Newsletter']
+        self.address = wpform_row['Adresse']
+        self.salutation = wpform_row['Anrede']
+        self.payment_method = wpform_row['Zahlungsmethode']
 
 
 class DynamicsData(TransactionData):

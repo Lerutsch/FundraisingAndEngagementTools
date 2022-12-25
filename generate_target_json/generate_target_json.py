@@ -13,6 +13,8 @@ import shutil
 
 
 timestamp_str = time.strftime("%Y%m%d-%H%M%S")
+main_folder = r"C:\Users\OleksiiMakarenko\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK Finance " \
+              r"- Documents\Integration\\"
 
 
 def create_json_file(folder, json):
@@ -23,22 +25,15 @@ def create_json_file(folder, json):
     return guid
 
 
-# def date_parser(str_date):
-#     return datetime.strptime(str_date, "%d.%m.%Y")
-
-
 def process_paypal():
     def date_parser(str_date):
         return datetime.strptime(str_date, "%d.%m.%Y")
     paypal_file_name = '20221223_paypal_export.csv'
-    paypal_file_folder = r"C:\Users\OleksiiMakarenko\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK Finance " \
-                           r"- Documents\Integration\Paypal"
+    paypal_file_folder = main_folder + r"Paypal"
     paypal_file_location = paypal_file_folder + '\\' + paypal_file_name
-    paypal_processed_folder = r"C:\Users\OleksiiMakarenko\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK " \
-                                r"Finance - Documents\Integration\Paypal\Processed"
+    paypal_processed_folder = main_folder + r"Paypal\Processed"
     paypal_processed_location = paypal_processed_folder + '\\' + paypal_file_name
-    paypal_write_folder = r"C:\Users\OleksiiMakarenko\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK Finance " \
-                          r"- Documents\Integration\Paypal\JSON_Import"
+    paypal_write_folder = main_folder + r"Paypal\JSON_Import"
 
     logging.info("-------------------Start of paypal processing-------------------")
     # Read CSV
@@ -68,14 +63,11 @@ def process_bank():
     def date_parser(str_date):
         return datetime.strptime(str_date, "%d.%m.%y")
     bank_file_name = '20220905-476346-umsatz.csv'
-    bank_file_folder = r"C:\Users\User\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK Finance " \
-                           r"- Documents\Integration\Bank"
+    bank_file_folder = main_folder + r"Bank"
     bank_file_location = bank_file_folder + '\\' + bank_file_name
-    bank_processed_folder = r"C:\Users\User\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK " \
-                                r"Finance - Documents\Integration\Bank\Processed"
+    bank_processed_folder = main_folder + r"Bank\Processed"
     bank_processed_location = bank_processed_folder + '\\' + bank_file_name
-    bank_write_folder = r"C:\Users\User\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK Finance " \
-                          r"- Documents\Integration\Bank\JSON_Import"
+    bank_write_folder = main_folder + r"Bank\JSON_Import"
 
     logging.info("-------------------Start of bank processing-------------------")
     # Read CSV
@@ -92,13 +84,47 @@ def process_bank():
         print(transaction_json)
         file_name = create_json_file(bank_write_folder, transaction_json)
         logging.info(f"File {file_name} was created for {bank_transaction.source_name}, "
-                     f"email {bank_transaction.email}")
+                     f"iban {bank_transaction.cheque_number}")
         counter += 1
         if counter == 3:
             break
 
     # # Move CSV to Imported folder
     shutil.move(bank_file_location, bank_processed_location)
+
+
+def process_stripe():
+    def date_parser(str_date):
+        return datetime.strptime(str_date, "%d.%m.%y")
+    stripe_file_name = '20220905-476346-umsatz.csv'
+    stripe_file_folder = main_folder + r"Stripe"
+    stripe_file_location = stripe_file_folder + '\\' + stripe_file_name
+    stripe_processed_folder = main_folder + r"Bank\Processed"
+    stripe_processed_location = stripe_processed_folder + '\\' + stripe_file_name
+    stripe_write_folder = main_folder + r"Bank\JSON_Import"
+
+    logging.info("-------------------Start of bank processing-------------------")
+    # Read CSV
+    transaction_df = pd.read_csv(stripe_file_location, delimiter=";", decimal=',', thousands='.', encoding='Windows-1251',
+                                 parse_dates=['Buchungstag'], date_parser=date_parser)
+    transaction_df.fillna('', inplace=True)
+    transaction_df = transaction_entities.filter_df_bank(transaction_df)
+
+    # Split CSV
+    counter = 0
+    for index, row in transaction_df.iterrows():
+        stripe_transaction = transaction_entities.StripeData(row)
+        transaction_json = stripe_transaction.toJSON()
+        print(transaction_json)
+        file_name = create_json_file(stripe_write_folder, transaction_json)
+        logging.info(f"File {file_name} was created for {stripe_transaction.source_name}, "
+                     f"email {stripe_transaction.transaction_id}")
+        counter += 1
+        if counter == 3:
+            break
+
+    # # Move CSV to Imported folder
+    shutil.move(stripe_file_location, stripe_processed_location)
 
 
 locale.setlocale(locale.LC_ALL, 'de_DE')
