@@ -15,25 +15,56 @@ def filter_df_bank(df):
     return df
 
 
+def filter_df_wpforms(df):
+    df = df.loc[df["Payment Status"] == "Completed"]
+    return df
+
+
 def format_field(value):
     if isinstance(value, datetime.date):
         return value.isoformat()
     else:
+        print(value)
+        print(type(value))
         return value.__dict__
 
 
 class TransactionData:
-    data_dict = {}
-    mapping_dict = {}
-    key = ''
+    def __init__(self):
+        #WPForm
+        self.country = ""
+        self.zip = ""
+        self.city = ""
+        self.salutation = ""
+        self.payment_method = ""
+        self.address = ""
+        self.newsletter = 0
+        self.designation = ""
 
     def toJSON(self):
         return json.dumps(self, default=format_field, sort_keys=True, indent=4)
+
+    def initWPForm(self, wpform_row):
+        if wpform_row['Subscribe to Newsletter']:
+            self.newsletter = 1
+
+        if not str(wpform_row['Adresse.1']) == 'nan':
+            address = wpform_row['Adresse.1']
+            address_list = address.split("\r\n")
+            self.address = address_list[0]
+            self.city = address_list[1]
+            self.zip = address_list[2]
+            self.country = address_list[3]
+
+        self.salutation = wpform_row['Anrede']
+        self.payment_method = wpform_row['Zahlungsmethode']
+        self.designation = wpform_row['Waerme schenken Paket']
 
 
 class PaypalData(TransactionData):
     # Init from Series from DF from read CSV
     def __init__(self, df_row):
+        super().__init__()
         self.gift_type = 'Paypal'
         self.source_name = df_row['Name']
         self.total_paid = df_row['Brutto']
@@ -51,20 +82,10 @@ class PaypalData(TransactionData):
         self.middle_name = donor_name_parser.middle_name
         self.title = donor_name_parser.title
 
-        #WPForm
-        self.payment_method = ""
-        self.address = ""
-        self.newsletter = 0
-
-    def initWPForm(self, wpform_row):
-        self.newsletter = wpform_row['Subscribe to Newsletter']
-        self.address = wpform_row['Adresse']
-        self.salutation = wpform_row['Anrede']
-        self.payment_method = wpform_row['Zahlungsmethode']
-
 
 class BankData(TransactionData):
     def __init__(self, df_row):
+        super().__init__()
         self.gift_type = 'Wire or Transfer'
         self.source_name = df_row['Beguenstigter/Zahlungspflichtiger']
         self.total_paid = df_row['Betrag']
@@ -84,6 +105,7 @@ class BankData(TransactionData):
 
 class StripeData(TransactionData):
     def __init__(self, df_row):
+        super().__init__()
         self.gift_type = 'Stripe'
         self.source_name = df_row['Name']
         self.total_paid = df_row['Amount']
@@ -101,17 +123,6 @@ class StripeData(TransactionData):
         self.salutation = donor_name_parser.salutation
         self.middle_name = donor_name_parser.middle_name
         self.title = donor_name_parser.title
-
-        #WPForm
-        self.payment_method = ""
-        self.address = ""
-        self.newsletter = 0
-
-    def initWPForm(self, wpform_row):
-        self.newsletter = wpform_row['Subscribe to Newsletter']
-        self.address = wpform_row['Adresse']
-        self.salutation = wpform_row['Anrede']
-        self.payment_method = wpform_row['Zahlungsmethode']
 
 
 class DynamicsData(TransactionData):
