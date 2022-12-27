@@ -30,6 +30,7 @@ def format_field(value):
 class TransactionData:
     def __init__(self):
         #WPForm
+        self.address_ad = ""
         self.country = ""
         self.zip = ""
         self.city = ""
@@ -49,12 +50,25 @@ class TransactionData:
         if not str(wpform_row['Adresse.1']) == 'nan':
             address = wpform_row['Adresse.1']
             address_list = address.split("\r\n")
-            self.address = address_list[0]
-            self.city = address_list[1]
-            self.zip = address_list[2]
-            self.country = address_list[3]
+            address_len = len(address_list)
+            if address_len == 3:
+                self.address = address_list[0]
+                self.zip = address_list[1]
+                self.country = address_list[2]
+            elif address_len == 4:
+                self.address = address_list[0]
+                self.city = address_list[1]
+                self.zip = address_list[2]
+                self.country = address_list[3]
+            elif address_len == 5:
+                self.address = address_list[0]
+                self.address_ad = address_list[1]
+                self.city = address_list[2]
+                self.zip = address_list[3]
+                self.country = address_list[4]
 
-        self.salutation = wpform_row['Anrede']
+        if not str(wpform_row['Anrede']) == 'nan':
+            self.salutation = wpform_row['Anrede']
         self.payment_method = wpform_row['Zahlungsmethode']
         self.designation = wpform_row['Waerme schenken Paket']
 
@@ -70,6 +84,7 @@ class PaypalData(TransactionData):
         self.phone = df_row['Telefon']
         self.email = df_row['Absender E-Mail-Adresse']
         self.transaction_id = df_row['Transaktionscode']
+        self.purpose = df_row['Hinweis']
 
         self.key = 'email'
 
@@ -86,7 +101,8 @@ class BankData(TransactionData):
     def __init__(self, df_row):
         super().__init__()
         self.gift_type = 'Wire or Transfer'
-        self.source_name = df_row['Beguenstigter/Zahlungspflichtiger']
+        source_name = " ".join(df_row['Beguenstigter/Zahlungspflichtiger'].split())
+        self.source_name = source_name
         self.total_paid = df_row['Betrag']
         self.date = df_row['Buchungstag'].date()
         self.purpose = df_row['Verwendungszweck']

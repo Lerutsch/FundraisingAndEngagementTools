@@ -30,7 +30,7 @@ def create_json_file(folder, json, counter, uid=str(uuid.uuid4())):
 def process_paypal():
     def date_parser(str_date):
         return datetime.strptime(str_date, "%d.%m.%Y")
-    paypal_file_name = '20221223_20221226_paypal_export.csv'
+    paypal_file_name = '20221123_20221225_paypal_export.csv'
     # paypal_file_folder = main_folder + r"Paypal"
     paypal_file_location = main_folder + r"\Paypal\\" + paypal_file_name
     # paypal_processed_folder = main_folder + r"Paypal\Processed"
@@ -49,7 +49,7 @@ def process_paypal():
     wpforms_df = get_wpforms_df()
 
     # Split CSV
-    counter = 0
+    counter = 1
     for index, row in transaction_df.iterrows():
         paypal_transaction = transaction_entities.PaypalData(row)
         add_wpforms_data(wpforms_df, paypal_transaction)
@@ -57,12 +57,13 @@ def process_paypal():
         file_name = create_json_file(paypal_write_folder, transaction_json, counter, paypal_transaction.email)
         logging.info(f"File {file_name} was created for {paypal_transaction.source_name}, "
                      f"email {paypal_transaction.email}")
+        print(counter)
         counter += 1
-        if counter == 20:
-            break
+        # if counter == 10:
+        #     break
 
     # Move CSV to Imported folder
-    # shutil.move(paypal_file_location, paypal_processed_location)
+    shutil.move(paypal_file_location, paypal_processed_location)
 
 
 def process_bank():
@@ -99,7 +100,7 @@ def process_bank():
         #     break
 
     # Move CSV to Imported folder
-    # shutil.move(bank_file_location, bank_processed_location)
+    shutil.move(bank_file_location, bank_processed_location)
 
 
 def process_stripe():
@@ -112,7 +113,7 @@ def process_stripe():
     stripe_processed_location = stripe_processed_folder + '\\' + stripe_file_name
     stripe_write_folder = main_folder + r"Bank\JSON_Import"
 
-    logging.info("-------------------Start of bank processing-------------------")
+    logging.info("-------------------Start of stripe processing-------------------")
     # Read CSV
     transaction_df = pd.read_csv(stripe_file_location, delimiter=";", decimal=',', thousands='.', encoding='Windows-1251',
                                  parse_dates=['Buchungstag'], date_parser=date_parser)
@@ -170,8 +171,8 @@ logging.basicConfig(filename=logging_folder+'\\' + timestamp_str + '_Transaction
 
 logging.info("Running Generating JSON files for Transactions")
 
-# process_paypal()
-process_bank()
+process_paypal()
+# process_bank()
 logger = logging.getLogger('urbanGUI')
 
 # def test_wpforms():
