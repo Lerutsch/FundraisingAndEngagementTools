@@ -2,7 +2,7 @@ import nameparser
 import requests
 
 
-def get_salutation(fullname):
+def get_gender(fullname):
     if (len(fullname.split())) < 4:
         gender = ""
         firstname = nameparser.HumanName(fullname).first
@@ -14,17 +14,24 @@ def get_salutation(fullname):
             if data['probability'] > 0.9:
                 gender = data['gender']
 
-        salutation = ""
+        gender_int = 844060004
         if gender == "female":
-            salutation = 844060000
+            gender_int = 844060000
         elif gender == "male":
-            salutation = 844060001
+            gender_int = 844060001
 
         # print(gender + ' ' + fullname)
 
-        return salutation
+        return gender_int
     else:
         return 844060004
+
+
+def get_salutation(gender):
+    if gender == 844060000:
+        return "Frau"
+    elif gender == 844060001:
+        return "Herr"
 
 
 class DonorNameParser:
@@ -37,5 +44,6 @@ class DonorNameParser:
         self.middle_name = str.title(parsed_name.middle)
         self.title = str.title(parsed_name.title)
 
-        self.salutation = get_salutation(full_name)
+        self.gender = get_gender(full_name)
+        self.salutation = get_salutation(self.gender)
 

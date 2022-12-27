@@ -13,22 +13,21 @@ import shutil
 
 
 timestamp_str = time.strftime("%Y%m%d-%H%M%S")
-main_folder = r"C:\Users\User\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK Finance " \
+main_folder = r"C:\Users\OleksiiMakarenko\Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\BgK Finance " \
               r"- Documents\Integration"
 
 
-def create_json_file(folder, json):
-    guid = str(uuid.uuid4())
-    file = open(folder+"\\"+guid+".json", "w")
+def create_json_file(folder, json, uid=str(uuid.uuid4())):
+    file_name = time.strftime("%Y%m%d-%H%M%S") + '_' + uid
+    file = open(folder+"\\"+file_name+".json", "w")
     file.write(json)
     file.close()
-    return guid
+    return file_name
 
 
 def process_paypal():
     def date_parser(str_date):
         return datetime.strptime(str_date, "%d.%m.%Y")
-    paypal_file_name = '20221223_paypal_export.csv'
     paypal_file_name = '20221223_20221226_paypal_export.csv'
     # paypal_file_folder = main_folder + r"Paypal"
     paypal_file_location = main_folder + r"\Paypal\\" + paypal_file_name
@@ -43,6 +42,7 @@ def process_paypal():
     transaction_df['Brutto'] = transaction_df['Brutto'].apply(locale.atof)
     transaction_df = transaction_entities.filter_df_paypal(transaction_df)
     transaction_df.fillna('', inplace=True)
+    transaction_df.sort_values(by='Datum', ascending=True, inplace=True)
 
     wpforms_df = get_wpforms_df()
 
@@ -50,9 +50,9 @@ def process_paypal():
     counter = 0
     for index, row in transaction_df.iterrows():
         paypal_transaction = transaction_entities.PaypalData(row)
-        transaction_json = paypal_transaction.toJSON()
         add_wpforms_data(wpforms_df, paypal_transaction)
-        file_name = create_json_file(paypal_write_folder, transaction_json)
+        transaction_json = paypal_transaction.toJSON()
+        file_name = create_json_file(paypal_write_folder, transaction_json, paypal_transaction.email)
         logging.info(f"File {file_name} was created for {paypal_transaction.source_name}, "
                      f"email {paypal_transaction.email}")
         counter += 1
@@ -66,12 +66,13 @@ def process_paypal():
 def process_bank():
     def date_parser(str_date):
         return datetime.strptime(str_date, "%d.%m.%y")
-    bank_file_name = '20220905-476346-umsatz.csv'
-    bank_file_folder = main_folder + r"Bank"
-    bank_file_location = bank_file_folder + '\\' + bank_file_name
-    bank_processed_folder = main_folder + r"Bank\Processed"
-    bank_processed_location = bank_processed_folder + '\\' + bank_file_name
-    bank_write_folder = main_folder + r"Bank\JSON_Import"
+    bank_file_name = '20221001-20221226-umsatz.csv'
+    # bank_file_name = 'test.csv'
+    # bank_file_folder = main_folder + r"\Bank"
+    bank_file_location = main_folder + r"\Bank\\" + bank_file_name
+    # bank_processed_folder = main_folder + r"Bank\Processed"
+    bank_processed_location = main_folder + r"Bank\Processed\\" + bank_file_name
+    bank_write_folder = main_folder + r"\Bank\JSON_Import"
 
     logging.info("-------------------Start of bank processing-------------------")
     # Read CSV
@@ -79,21 +80,23 @@ def process_bank():
                                  parse_dates=['Buchungstag'], date_parser=date_parser)
     transaction_df.fillna('', inplace=True)
     transaction_df = transaction_entities.filter_df_bank(transaction_df)
+    transaction_df.sort_values(by='Buchungstag', ascending=True, inplace=True)
 
     # Split CSV
     counter = 0
     for index, row in transaction_df.iterrows():
         bank_transaction = transaction_entities.BankData(row)
         transaction_json = bank_transaction.toJSON()
-        print(transaction_json)
-        file_name = create_json_file(bank_write_folder, transaction_json)
+        file_uid = f"{str(bank_transaction.date)}_{bank_transaction.source_name}"
+        file_name = create_json_file(bank_write_folder, transaction_json, file_uid)
         logging.info(f"File {file_name} was created for {bank_transaction.source_name}, "
                      f"iban {bank_transaction.cheque_number}")
         counter += 1
-        if counter == 3:
-            break
+        print(counter)
+        # if counter == 1:
+        #     break
 
-    # # Move CSV to Imported folder
+    # Move CSV to Imported folder
     shutil.move(bank_file_location, bank_processed_location)
 
 
@@ -124,7 +127,7 @@ def process_stripe():
         logging.info(f"File {file_name} was created for {stripe_transaction.source_name}, "
                      f"email {stripe_transaction.transaction_id}")
         counter += 1
-        if counter == 3:
+        if counter == 1:
             break
 
     # # Move CSV to Imported folder
@@ -147,14 +150,12 @@ def get_wpforms_df():
 
 def add_wpforms_data(wpforms_df, transaction_data):
     if transaction_data.email:
-        print(transaction_data.email)
         wpforms_df = wpforms_df.loc[(wpforms_df["E-Mail"] == transaction_data.email)]
         wpforms_df = wpforms_df.loc[(wpforms_df["Entry Date"].dt.date == transaction_data.date)]
         if not wpforms_df.empty:
-            print(wpforms_df.info())
             transaction_data.initWPForm(wpforms_df.iloc[0])
-            transaction_json = transaction_data.toJSON()
-            print(transaction_json)
+            # transaction_json = transaction_data.toJSON()
+            # print(transaction_json)
 
 
 locale.setlocale(locale.LC_ALL, 'de_DE')
@@ -167,8 +168,8 @@ logging.basicConfig(filename=logging_folder+'\\' + timestamp_str + '_Transaction
 
 logging.info("Running Generating JSON files for Transactions")
 
-process_paypal()
-# process_bank()
+# process_paypal()
+process_bank()
 logger = logging.getLogger('urbanGUI')
 
 # def test_wpforms():

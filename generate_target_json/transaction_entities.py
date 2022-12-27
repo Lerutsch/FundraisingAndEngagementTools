@@ -24,8 +24,6 @@ def format_field(value):
     if isinstance(value, datetime.date):
         return value.isoformat()
     else:
-        print(value)
-        print(type(value))
         return value.__dict__
 
 
@@ -79,6 +77,7 @@ class PaypalData(TransactionData):
         self.first_name = donor_name_parser.first_name
         self.last_name = donor_name_parser.last_name
         self.salutation = donor_name_parser.salutation
+        self.gender = donor_name_parser.gender
         self.middle_name = donor_name_parser.middle_name
         self.title = donor_name_parser.title
 
