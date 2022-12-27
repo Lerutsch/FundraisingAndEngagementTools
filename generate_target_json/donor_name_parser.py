@@ -32,6 +32,8 @@ def get_salutation(gender):
         return "Frau"
     elif gender == 844060001:
         return "Herr"
+    else:
+        return ""
 
 
 class DonorNameParser:
