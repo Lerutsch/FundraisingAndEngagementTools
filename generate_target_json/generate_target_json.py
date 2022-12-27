@@ -17,8 +17,10 @@ main_folder = r"C:\Users\OleksiiMakarenko\Blau-Gelbes Kreuz Deutsch-Ukrainischer
               r"- Documents\Integration"
 
 
-def create_json_file(folder, json, uid=str(uuid.uuid4())):
-    file_name = time.strftime("%Y%m%d-%H%M%S") + '_' + uid
+def create_json_file(folder, json, counter, uid=str(uuid.uuid4())):
+    uid = uid.replace("\\", " ")
+    uid = uid.replace("/", " ")
+    file_name = time.strftime("%Y%m%d-%H%M%S") + '_' + str(counter) + '_' + uid
     file = open(folder+"\\"+file_name+".json", "w")
     file.write(json)
     file.close()
@@ -52,7 +54,7 @@ def process_paypal():
         paypal_transaction = transaction_entities.PaypalData(row)
         add_wpforms_data(wpforms_df, paypal_transaction)
         transaction_json = paypal_transaction.toJSON()
-        file_name = create_json_file(paypal_write_folder, transaction_json, paypal_transaction.email)
+        file_name = create_json_file(paypal_write_folder, transaction_json, counter, paypal_transaction.email)
         logging.info(f"File {file_name} was created for {paypal_transaction.source_name}, "
                      f"email {paypal_transaction.email}")
         counter += 1
@@ -66,12 +68,12 @@ def process_paypal():
 def process_bank():
     def date_parser(str_date):
         return datetime.strptime(str_date, "%d.%m.%y")
-    bank_file_name = '20221001-20221226-umsatz.csv'
+    bank_file_name = '20221109-20221226-umsatz.csv'
     # bank_file_name = 'test.csv'
     # bank_file_folder = main_folder + r"\Bank"
     bank_file_location = main_folder + r"\Bank\\" + bank_file_name
     # bank_processed_folder = main_folder + r"Bank\Processed"
-    bank_processed_location = main_folder + r"Bank\Processed\\" + bank_file_name
+    bank_processed_location = main_folder + r"\Bank\Processed\\" + bank_file_name
     bank_write_folder = main_folder + r"\Bank\JSON_Import"
 
     logging.info("-------------------Start of bank processing-------------------")
@@ -88,7 +90,7 @@ def process_bank():
         bank_transaction = transaction_entities.BankData(row)
         transaction_json = bank_transaction.toJSON()
         file_uid = f"{str(bank_transaction.date)}_{bank_transaction.source_name}"
-        file_name = create_json_file(bank_write_folder, transaction_json, file_uid)
+        file_name = create_json_file(bank_write_folder, transaction_json, counter, file_uid)
         logging.info(f"File {file_name} was created for {bank_transaction.source_name}, "
                      f"iban {bank_transaction.cheque_number}")
         counter += 1
@@ -97,7 +99,7 @@ def process_bank():
         #     break
 
     # Move CSV to Imported folder
-    shutil.move(bank_file_location, bank_processed_location)
+    # shutil.move(bank_file_location, bank_processed_location)
 
 
 def process_stripe():
