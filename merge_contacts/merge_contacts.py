@@ -79,7 +79,7 @@ def create_json_merge_request(json_file, main_record_id, contactid):
 def run():
     read_file = r"C:\Users\OleksiiMakarenko\OneDrive - Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\IT\Dynamics Sales\Contact_merge.xlsx"
     # write_file = r"C:\Users\OleksiiMakarenko\OneDrive - Blau-Gelbes Kreuz Deutsch-Ukrainischer Verein e.V\IT\Dynamics Sales\Contact_merge_generated.xlsx"
-    write_file = r"Contact_merge_generated.xlsx"
+    write_file = r"../Contact_merge_generated.xlsx"
     json_path = "merge_contacts.csv"
     json_file = open(json_path, "w")
     # json_file.write("{")
